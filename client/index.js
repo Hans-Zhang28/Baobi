@@ -1,3 +1,7 @@
+import './images/son.jpg';
+import './images/bear-icon.png';
+import './styles.css';
+
 const servers = {
   iceServers: [
       { urls: "stun:stun01.sipphone.com" },

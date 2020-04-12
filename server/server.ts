@@ -23,12 +23,12 @@ export class Server {
   }
 
   private configureApp(): void {
-    this.app.use(express.static(path.join(__dirname, "../client")));
+    this.app.use(express.static(path.join(__dirname, '../webpack')));
   }
 
   private configureRoutes(): void {
     this.app.get("/", (req, res) => {
-      res.sendFile('index.html')
+      res.sendFile(path.join(__dirname, '../client/index.html'))
     });
   }
 
