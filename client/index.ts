@@ -1,6 +1,7 @@
 import './images/son.jpg';
 import './images/bear-icon.png';
 import './styles.css';
+const appController = require('./javascripts/app-controller');
 
 const servers = {
   iceServers: [
@@ -44,7 +45,7 @@ const servers = {
 let isAlreadyCalling = false;
 let getCalled = false;
 
-const existingCalls = [];
+// const existingCalls = [];
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 
