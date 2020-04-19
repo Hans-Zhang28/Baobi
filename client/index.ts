@@ -1,268 +1,270 @@
 import './images/son.jpg';
 import './images/bear-icon.png';
-import './styles.css';
-const appController = require('./javascripts/app-controller');
+import './css/styles.css';
+import appController from './ts/app-controller';
 
-const servers = {
-  iceServers: [
-      { urls: "stun:stun01.sipphone.com" },
-      { urls: "stun:stun.ekiga.net" },
-      { urls: "stun:stun.fwdnet.net" },
-      { urls: "stun:stun.ideasip.com" },
-      { urls: "stun:stun.iptel.org" },
-      { urls: "stun:stun.rixtelecom.se" },
-      { urls: "stun:stun.schlund.de" },
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "stun:stun2.l.google.com:19302" },
-      { urls: "stun:stun3.l.google.com:19302" },
-      { urls: "stun:stun4.l.google.com:19302" },
-      { urls: "stun:stunserver.org" },
-      { urls: "stun:stun.softjoys.com" },
-      { urls: "stun:stun.voiparound.com" },
-      { urls: "stun:stun.voipbuster.com" },
-      { urls: "stun:stun.voipstunt.com" },
-      { urls: "stun:stun.voxgratia.org" },
-      { urls: "stun:stun.xten.com" },
-      {
-          urls: "turn:numb.viagenie.ca",
-          credential: "muazkh",
-          username: "webrtc@live.com"
-      },
-      {
-          urls: "turn:192.158.29.39:3478?transport=udp",
-          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
-          username: "28224511:1379330808"
-      },
-      {
-          urls: "turn:192.158.29.39:3478?transport=tcp",
-          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
-          username: "28224511:1379330808"
-      }
-  ]
-};
+new appController();
 
-let isAlreadyCalling = false;
-let getCalled = false;
+// const servers = {
+//   iceServers: [
+//       { urls: "stun:stun01.sipphone.com" },
+//       { urls: "stun:stun.ekiga.net" },
+//       { urls: "stun:stun.fwdnet.net" },
+//       { urls: "stun:stun.ideasip.com" },
+//       { urls: "stun:stun.iptel.org" },
+//       { urls: "stun:stun.rixtelecom.se" },
+//       { urls: "stun:stun.schlund.de" },
+//       { urls: "stun:stun.l.google.com:19302" },
+//       { urls: "stun:stun1.l.google.com:19302" },
+//       { urls: "stun:stun2.l.google.com:19302" },
+//       { urls: "stun:stun3.l.google.com:19302" },
+//       { urls: "stun:stun4.l.google.com:19302" },
+//       { urls: "stun:stunserver.org" },
+//       { urls: "stun:stun.softjoys.com" },
+//       { urls: "stun:stun.voiparound.com" },
+//       { urls: "stun:stun.voipbuster.com" },
+//       { urls: "stun:stun.voipstunt.com" },
+//       { urls: "stun:stun.voxgratia.org" },
+//       { urls: "stun:stun.xten.com" },
+//       {
+//           urls: "turn:numb.viagenie.ca",
+//           credential: "muazkh",
+//           username: "webrtc@live.com"
+//       },
+//       {
+//           urls: "turn:192.158.29.39:3478?transport=udp",
+//           credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+//           username: "28224511:1379330808"
+//       },
+//       {
+//           urls: "turn:192.158.29.39:3478?transport=tcp",
+//           credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+//           username: "28224511:1379330808"
+//       }
+//   ]
+// };
 
-// const existingCalls = [];
+// let isAlreadyCalling = false;
+// let getCalled = false;
 
-const { RTCPeerConnection, RTCSessionDescription } = window;
+// // const existingCalls = [];
 
-const peerConnection = new RTCPeerConnection(servers);
+// const { RTCPeerConnection, RTCSessionDescription } = window;
 
-function unselectUsersFromList() {
-  const alreadySelectedUser = document.querySelectorAll(
-    ".active-user.active-user--selected"
-  );
+// const peerConnection = new RTCPeerConnection(servers);
 
-  alreadySelectedUser.forEach(el => {
-    el.setAttribute("class", "active-user");
-  });
-}
+// function unselectUsersFromList() {
+//   const alreadySelectedUser = document.querySelectorAll(
+//     ".active-user.active-user--selected"
+//   );
 
-function createUserItemContainer(socketId) {
-  const userContainerEl = document.createElement("div");
+//   alreadySelectedUser.forEach(el => {
+//     el.setAttribute("class", "active-user");
+//   });
+// }
 
-  const usernameEl = document.createElement("p");
+// function createUserItemContainer(socketId) {
+//   const userContainerEl = document.createElement("div");
 
-  userContainerEl.setAttribute("class", "active-user");
-  userContainerEl.setAttribute("id", socketId);
-  usernameEl.setAttribute("class", "username");
-  usernameEl.innerHTML = `Socket: ${socketId}`;
+//   const usernameEl = document.createElement("p");
 
-  userContainerEl.appendChild(usernameEl);
+//   userContainerEl.setAttribute("class", "active-user");
+//   userContainerEl.setAttribute("id", socketId);
+//   usernameEl.setAttribute("class", "username");
+//   usernameEl.innerHTML = `Socket: ${socketId}`;
 
-  userContainerEl.addEventListener("click", () => {
-    unselectUsersFromList();
-    userContainerEl.setAttribute("class", "active-user active-user--selected");
-    const talkingWithInfo = document.getElementById("talking-with-info");
-    talkingWithInfo.innerHTML = `Talking with: "Socket: ${socketId}"`;
-    callUser(socketId);
-  });
+//   userContainerEl.appendChild(usernameEl);
 
-  return userContainerEl;
-}
+//   userContainerEl.addEventListener("click", () => {
+//     unselectUsersFromList();
+//     userContainerEl.setAttribute("class", "active-user active-user--selected");
+//     const talkingWithInfo = document.getElementById("talking-with-info");
+//     talkingWithInfo.innerHTML = `Talking with: "Socket: ${socketId}"`;
+//     callUser(socketId);
+//   });
 
-const offerOptions = {
-  offerToReceiveAudio: 1,
-  offerToReceiveVideo: 1
-};
+//   return userContainerEl;
+// }
 
-async function callUser(socketId) {
-  const offer = await peerConnection.createOffer(offerOptions);
-  await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+// const offerOptions = {
+//   offerToReceiveAudio: 1,
+//   offerToReceiveVideo: 1
+// };
 
-  socket.emit("call-user", {
-    offer,
-    to: socketId
-  });
-}
+// async function callUser(socketId) {
+//   const offer = await peerConnection.createOffer(offerOptions);
+//   await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
 
-function updateUserList(socketIds) {
-  const activeUserContainer = document.getElementById("active-user-container");
+//   socket.emit("call-user", {
+//     offer,
+//     to: socketId
+//   });
+// }
 
-  socketIds.forEach(socketId => {
-    const alreadyExistingUser = document.getElementById(socketId);
-    if (!alreadyExistingUser) {
-      const userContainerEl = createUserItemContainer(socketId);
+// function updateUserList(socketIds) {
+//   const activeUserContainer = document.getElementById("active-user-container");
 
-      activeUserContainer.appendChild(userContainerEl);
-    }
-  });
-}
+//   socketIds.forEach(socketId => {
+//     const alreadyExistingUser = document.getElementById(socketId);
+//     if (!alreadyExistingUser) {
+//       const userContainerEl = createUserItemContainer(socketId);
 
-const socket = io();
+//       activeUserContainer.appendChild(userContainerEl);
+//     }
+//   });
+// }
 
-socket.on("update-user-list", ({ users }) => {
-  updateUserList(users);
-});
+// const socket = io();
 
-socket.on("remove-user", ({ socketId }) => {
-  const elToRemove = document.getElementById(socketId);
+// socket.on("update-user-list", ({ users }) => {
+//   updateUserList(users);
+// });
 
-  if (elToRemove) {
-    elToRemove.remove();
-  }
-});
+// socket.on("remove-user", ({ socketId }) => {
+//   const elToRemove = document.getElementById(socketId);
 
-socket.on("call-made", async data => {
-  if (getCalled) {
-    const confirmed = confirm(
-      `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
-    );
+//   if (elToRemove) {
+//     elToRemove.remove();
+//   }
+// });
 
-    if (!confirmed) {
-      socket.emit("reject-call", {
-        from: data.socket
-      });
+// socket.on("call-made", async data => {
+//   if (getCalled) {
+//     const confirmed = confirm(
+//       `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
+//     );
 
-      return;
-    }
-  }
+//     if (!confirmed) {
+//       socket.emit("reject-call", {
+//         from: data.socket
+//       });
 
-  await peerConnection.setRemoteDescription(
-    new RTCSessionDescription(data.offer)
-  );
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+//       return;
+//     }
+//   }
 
-  socket.emit("make-answer", {
-    answer,
-    to: data.socket
-  });
-  getCalled = true;
-});
+//   await peerConnection.setRemoteDescription(
+//     new RTCSessionDescription(data.offer)
+//   );
+//   const answer = await peerConnection.createAnswer();
+//   await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
 
-socket.on("answer-made", async data => {
-  await peerConnection.setRemoteDescription(
-    new RTCSessionDescription(data.answer)
-  );
+//   socket.emit("make-answer", {
+//     answer,
+//     to: data.socket
+//   });
+//   getCalled = true;
+// });
 
-  if (!isAlreadyCalling) {
-    callUser(data.socket);
-    isAlreadyCalling = true;
-  }
-});
+// socket.on("answer-made", async data => {
+//   await peerConnection.setRemoteDescription(
+//     new RTCSessionDescription(data.answer)
+//   );
 
-socket.on("call-rejected", data => {
-  alert(`User: "Socket: ${data.socket}" rejected your call.`);
-  unselectUsersFromList();
-});
+//   if (!isAlreadyCalling) {
+//     callUser(data.socket);
+//     isAlreadyCalling = true;
+//   }
+// });
 
-const remoteVideo = document.getElementById("remote-video");
-peerConnection.ontrack = function({ streams: [stream] }) {
-  remoteVideo.srcObject = stream;
-};
+// socket.on("call-rejected", data => {
+//   alert(`User: "Socket: ${data.socket}" rejected your call.`);
+//   unselectUsersFromList();
+// });
 
-peerConnection.onicecandidate = function(event) {
-  if (event.candidate) {
-    console.log(`Send the candidate ${event.candidate} to the remote peer`);
-  }
-}
+// const remoteVideo = document.getElementById("remote-video");
+// peerConnection.ontrack = function({ streams: [stream] }) {
+//   remoteVideo.srcObject = stream;
+// };
 
-peerConnection.oniceconnectionstatechange = function(event) {
-  if (peerConnection.iceConnectionState === "failed" ||
-      peerConnection.iceConnectionState === "disconnected" ||
-      peerConnection.iceConnectionState === "closed") {
-    console.error('Failed to connect');
-  }
-};
+// peerConnection.onicecandidate = function(event) {
+//   if (event.candidate) {
+//     console.log(`Send the candidate ${event.candidate} to the remote peer`);
+//   }
+// }
+
+// peerConnection.oniceconnectionstatechange = function(event) {
+//   if (peerConnection.iceConnectionState === "failed" ||
+//       peerConnection.iceConnectionState === "disconnected" ||
+//       peerConnection.iceConnectionState === "closed") {
+//     console.error('Failed to connect');
+//   }
+// };
 
 
-const constraints = { video: true, audio: true };
-navigator.mediaDevices.getUserMedia(constraints)
-  .then(stream => {
-    const localVideo = document.getElementById("local-video");
-    if (localVideo) {
-      localVideo.srcObject = stream;
-    }
+// const constraints = { video: true, audio: true };
+// navigator.mediaDevices.getUserMedia(constraints)
+//   .then(stream => {
+//     const localVideo = document.getElementById("local-video");
+//     if (localVideo) {
+//       localVideo.srcObject = stream;
+//     }
 
-    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-  })
-  .catch(error => {
-    console.error(error);
-  });
+//     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+//   })
+//   .catch(error => {
+//     console.error(error);
+//   });
 
-let dragItem = document.querySelector("#local-video");
+// let dragItem = document.querySelector("#local-video");
 
-let active = false;
-let currentX;
-let currentY;
-let initialX;
-let initialY;
-let xOffset = 0;
-let yOffset = 0;
+// let active = false;
+// let currentX;
+// let currentY;
+// let initialX;
+// let initialY;
+// let xOffset = 0;
+// let yOffset = 0;
 
-dragItem.addEventListener("touchstart", dragStart, false);
-dragItem.addEventListener("touchend", dragEnd, false);
-dragItem.addEventListener("touchmove", drag, false);
+// dragItem.addEventListener("touchstart", dragStart, false);
+// dragItem.addEventListener("touchend", dragEnd, false);
+// dragItem.addEventListener("touchmove", drag, false);
 
-dragItem.addEventListener("mousedown", dragStart, false);
-dragItem.addEventListener("mouseup", dragEnd, false);
-dragItem.addEventListener("mousemove", drag, false);
+// dragItem.addEventListener("mousedown", dragStart, false);
+// dragItem.addEventListener("mouseup", dragEnd, false);
+// dragItem.addEventListener("mousemove", drag, false);
 
-function dragStart(e) {
-  if (e.type === "touchstart") {
-    initialX = e.touches[0].clientX - xOffset;
-    initialY = e.touches[0].clientY - yOffset;
-  } else {
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-  }
+// function dragStart(e) {
+//   if (e.type === "touchstart") {
+//     initialX = e.touches[0].clientX - xOffset;
+//     initialY = e.touches[0].clientY - yOffset;
+//   } else {
+//     initialX = e.clientX - xOffset;
+//     initialY = e.clientY - yOffset;
+//   }
 
-  if (e.target === dragItem) {
-    active = true;
-  }
-}
+//   if (e.target === dragItem) {
+//     active = true;
+//   }
+// }
 
-function dragEnd(e) {
-  initialX = currentX;
-  initialY = currentY;
+// function dragEnd(e) {
+//   initialX = currentX;
+//   initialY = currentY;
 
-  active = false;
-}
+//   active = false;
+// }
 
-function drag(e) {
-  if (active) {
+// function drag(e) {
+//   if (active) {
   
-    e.preventDefault();
+//     e.preventDefault();
   
-    if (e.type === "touchmove") {
-      currentX = e.touches[0].clientX - initialX;
-      currentY = e.touches[0].clientY - initialY;
-    } else {
-      currentX = e.clientX - initialX;
-      currentY = e.clientY - initialY;
-    }
+//     if (e.type === "touchmove") {
+//       currentX = e.touches[0].clientX - initialX;
+//       currentY = e.touches[0].clientY - initialY;
+//     } else {
+//       currentX = e.clientX - initialX;
+//       currentY = e.clientY - initialY;
+//     }
 
-    xOffset = currentX;
-    yOffset = currentY;
+//     xOffset = currentX;
+//     yOffset = currentY;
 
-    setTranslate(currentX, currentY, dragItem);
-  }
-}
+//     setTranslate(currentX, currentY, dragItem);
+//   }
+// }
 
-function setTranslate(xPos, yPos, el) {
-  el.style.transform = `translate(${xPos}px, ${yPos}px) rotateY(180deg)`;
-}
+// function setTranslate(xPos, yPos, el) {
+//   el.style.transform = `translate(${xPos}px, ${yPos}px) rotateY(180deg)`;
+// }

@@ -28,6 +28,11 @@
         </div>
       </header>
       <div class="content-container">
+        <div id="dialog" title="What's your username?">
+          <label for="username">Usenname:</label>
+          <input type="text" id="username" name="username">
+          <input type="button" id="submit-button" value="Submit">
+        </div>
         <div class="active-users-panel" id="active-user-container">
           <h3 class="panel-title">Active Users:</h3>
         </div>
@@ -43,6 +48,6 @@
       </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="./index.js"></script>
+    <script src="./bundle.js"></script>
   </body>
 </html>

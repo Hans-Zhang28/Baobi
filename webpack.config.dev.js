@@ -4,7 +4,8 @@ const webpack = require('webpack');
 const CACHE_PATH = path.resolve(__dirname, './tmp/cache/webpack');
 
 module.exports = {
-  entry: './client',
+  entry: './client/index.ts',
+  mode: 'development',
   module: {
     rules: [
       {
@@ -22,7 +23,7 @@ module.exports = {
        }]
       },
       {
-        test: /\.?tsx$/,
+        test: /\.?ts$/,
         exclude: /(node_modules)/,
         use: 'ts-loader'
       },
@@ -32,7 +33,7 @@ module.exports = {
     contentBase: './webpack',
   },
   output: {
-    filename: 'index.js',
+    filename: 'bundle.js',
     path: path.resolve(__dirname, 'webpack'),
   },
   resolve: {

@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "outDir": "./typescript",
-    "lib": ["es2018"],
+    "lib": ["es2018", "dom"],
   },
   "include": [
     "./server/**/*"

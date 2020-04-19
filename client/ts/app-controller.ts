@@ -1,16 +1,15 @@
-import addLocalVideoListener from './local-video';
+import localVideoController from './local-video';
 
-const UI_CONSTANTS = {
-  localVideo: '#local-video',
-  remoteVideo: '#remote-video',
+const UI_ID_CONSTANTS = {
+  localVideo: 'local-video',
+  remoteVideo: 'remote-video',
 };
 
 export default class AppController {
-  private localVideo: JQuery<HTMLElement>;
+  private localVideo: HTMLElement | null;
 
   public constructor() {
-    this.localVideo = $(UI_CONSTANTS.localVideo);
-    debugger;
-    this.localVideo.draggable();
+    this.localVideo = document.getElementById(UI_ID_CONSTANTS.localVideo);
+    localVideoController(this.localVideo); // make local video draggable
   }
 }

@@ -1,63 +1,54 @@
-export default function addLocalVideoListener(elementId: string): void {
-  let active: boolean = false;
+export default function addLocalVideoListener(element: HTMLElement | null): void {
   let currentX: number, currentY: number, initialX: number, initialY: number;
-  let xOffset: number = 0;
-  let yOffset: number = 0;
 
-  let dragItem: HTMLElement | null = document.querySelector(elementId);
-  if (dragItem) {
-    dragItem.addEventListener("touchstart", dragStart, false);
-    dragItem.addEventListener("touchend", dragEnd, false);
-    dragItem.addEventListener("touchmove", drag, false);
-  
-    dragItem.addEventListener("mousedown", dragStart, false);
-    dragItem.addEventListener("mouseup", dragEnd, false);
-    dragItem.addEventListener("mousemove", drag, false);
+  if (element) {
+    element.addEventListener('touchstart', dragStart, false);
+    element.addEventListener('mousedown', dragStart, false);
   }
 
   // Private functions
   function dragStart(event: TouchEvent | MouseEvent): void {
+    event.preventDefault();
     if (event instanceof TouchEvent) {
-      initialX = event.touches[0].clientX - xOffset;
-      initialY = event.touches[0].clientY - yOffset;
+      initialX = event.touches[0].clientX;
+      initialY = event.touches[0].clientY;
     } else {
-      initialX = event.clientX - xOffset;
-      initialY = event.clientY - yOffset;
+      initialX = event.clientX;
+      initialY = event.clientY;
     }
 
-    if (event.target === dragItem) {
-      active = true;
-    }
+    document.addEventListener('mouseup', dragEnd, false);
+    document.addEventListener('mousemove', drag, false)
+    document.addEventListener('touchend', dragEnd, false);
+    document.addEventListener('touchmove', drag, false)
   }
 
   function dragEnd(): void {
-    initialX = currentX;
-    initialY = currentY;
-    active = false;
+    document.removeEventListener('mouseup', dragEnd, false);
+    document.removeEventListener('mousemove', drag, false);
+    document.removeEventListener('touchstart', dragEnd, false);
+    document.removeEventListener('touchmove', drag, false);
   }
 
   function drag(event: TouchEvent | MouseEvent): void {
-    if (active) {
-      event.preventDefault();
-    
-      if (event instanceof TouchEvent) {
-        currentX = event.touches[0].clientX - initialX;
-        currentY = event.touches[0].clientY - initialY;
-      } else {
-        currentX = event.clientX - initialX;
-        currentY = event.clientY - initialY;
-      }
-  
-      xOffset = currentX;
-      yOffset = currentY;
-  
-      if (dragItem) {
-        setTranslate(currentX, currentY, dragItem);
-      }
+    event.preventDefault();
+    if (event instanceof TouchEvent) {
+      currentX = initialX - event.touches[0].clientX;
+      currentY = initialY - event.touches[0].clientY;
+      initialX = event.touches[0].clientX;
+      initialY = event.touches[0].clientY;
+    } else {
+      currentX = initialX - event.clientX;
+      currentY = initialY - event.clientY;
+      initialX = event.clientX;
+      initialY = event.clientY;
     }
-  }
+
   
-  function setTranslate(xPos: number, yPos: number, element: HTMLElement) {
-    element.style.transform = `translate(${xPos}px, ${yPos}px) rotateY(180deg)`;
+    if (element) {
+      element.style.transform = 'rotateY(180deg)';
+      element.style.top = `${element.offsetTop - currentY}px`;
+      element.style.left = `${element.offsetLeft - currentX}px`;
+    }
   }
 }
