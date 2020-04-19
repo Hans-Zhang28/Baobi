@@ -18,6 +18,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
   </head>
   <body>
+    <div id="popup" class="popup-wrapper hide">
+      <div class="popup-title">
+        <button type="button" id="popup-close">&times;</button>
+        <p>Can I have your name, my cutest?</p>
+      </div>
+      <div class="popup-body">
+        <label for="username">Name:</label>
+        <input type="text" id="username" name="username">
+        <input type="button" id="submit-button" value="Submit">
+      </div>
+    </div>
     <div class="container">
       <header class="header">
         <div class="logo-container">
@@ -28,13 +39,8 @@
         </div>
       </header>
       <div class="content-container">
-        <div id="dialog" title="What's your username?">
-          <label for="username">Usenname:</label>
-          <input type="text" id="username" name="username">
-          <input type="button" id="submit-button" value="Submit">
-        </div>
         <div class="active-users-panel" id="active-user-container">
-          <h3 class="panel-title">Active Users:</h3>
+          <p class="panel-title">Active Users:</p>
         </div>
         <div class="video-chat-container">
           <h2 class="talk-info" id="talking-with-info">

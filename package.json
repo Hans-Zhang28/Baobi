@@ -4,7 +4,7 @@
   "description": "This is a chat app for Baobao and Beibi",
   "scripts": {
     "build-webpack": "node --max-old-space-size=4096 ./node_modules/.bin/webpack --config webpack.config.js --bail --display-error-details --progress",
-    "build-webpack:watch": "webpack --watch --config webpack.config.dev.js --bail --display-error-details --progress",
+    "build-webpack:watch": "node --max-old-space-size=4096 ./node_modules/.bin/webpack --watch --config webpack.config.dev.js --bail --display-error-details --progress",
     "build-tsc": "tsc",
     "build-tsc:watch": "tsc-watch --onSuccess \"sh -c ./success.sh\" --onFailure \"echo Compilation Failed!\" --compiler typescript/bin/tsc",
     "postinstall": "npm run build-tsc",
