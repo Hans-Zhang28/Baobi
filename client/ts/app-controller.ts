@@ -1,4 +1,4 @@
-const io = require('socket.io-client');
+import io from 'socket.io-client';
 import localVideoController from './local-video';
 import popUpController from './pop-up';
 import { trace } from './utils'; 
@@ -65,7 +65,7 @@ export default class AppController {
 
   private peerConnection: RTCPeerConnection | null;
 
-  private socket: SocketIO.Socket | null;
+  private socket: SocketIOClient.Socket | null;
 
   public constructor() {
     trace('initialize default values');
@@ -86,17 +86,20 @@ export default class AppController {
 
     trace('setup signaling connection');
     this.setupSignaling();
+
+    trace('setup local media stream');
+    this.setupLocalMediaStream();
   }
 
   private setupSignaling() {
     this.socket = io();
 
     if (this.socket) {
-      this.socket.on("update-user-list", ({ users }) => {
+      this.socket.on("update-user-list", ({ users }: any) => {
         this.updateUserList(users);
       });
       
-      this.socket.on("remove-user", ({ socketId }) => {
+      this.socket.on("remove-user", ({ socketId }: any) => {
         const elToRemove = document.getElementById(socketId);
       
         if (elToRemove) {
@@ -104,12 +107,12 @@ export default class AppController {
         }
       });
       
-      this.socket.on("call-made", async data => {
+      this.socket.on("call-made", async (data: any) => {
         if (this.beCalled && this.socket) {
           const confirmed = confirm(
             `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
           );
-      
+
           if (!confirmed) {
             this.socket.emit("reject-call", {
               from: data.socket
@@ -134,8 +137,9 @@ export default class AppController {
         }
       });
       
-      this.socket.on("answer-made", async data => {
+      this.socket.on("answer-made", async (data: any) => {
         if (this.peerConnection) {
+          debugger;
           await this.peerConnection.setRemoteDescription(
             new RTCSessionDescription(data.answer)
           );
@@ -146,7 +150,7 @@ export default class AppController {
         }
       });
       
-      this.socket.on("call-rejected", data => {
+      this.socket.on("call-rejected", (data: any) => {
         alert(`User: "Socket: ${data.socket}" rejected your call.`);
         this.unselectUsersFromList();
       });
@@ -160,6 +164,7 @@ export default class AppController {
 
     this.remoteVideo = <HTMLVideoElement>document.getElementById(UI_ID_CONSTANTS.remoteVideo);
     this.peerConnection.ontrack = ({ streams: [stream] }) => {
+      debugger;
       if (this.remoteVideo) {
         this.remoteVideo.srcObject = stream;
       }
@@ -252,5 +257,24 @@ export default class AppController {
         to: socketId
       });
     }
+  }
+
+  private async setupLocalMediaStream(): Promise<void> {
+    const constraints = { video: true, audio: true };
+    await navigator.mediaDevices.getUserMedia(constraints)
+      .then((stream: MediaStream) => {;
+        if (this.localVideo) {
+          this.localVideo.srcObject = stream;
+        }
+
+        stream.getTracks().forEach((track: MediaStreamTrack) => {
+          if (this.peerConnection) {
+            this.peerConnection.addTrack(track, stream);
+          }
+        });
+      })
+      .catch(error => {
+        trace(error);
+      });
   }
 }
