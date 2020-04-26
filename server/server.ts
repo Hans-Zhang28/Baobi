@@ -53,6 +53,8 @@ export class Server {
       }
 
       socket.on("call-user", (data: any) => {
+        console.log("@@@@@@call")
+        console.log(data.to);
         socket.to(data.to).emit("call-made", {
           offer: data.offer,
           socket: socket.id
@@ -60,6 +62,8 @@ export class Server {
       });
 
       socket.on("make-answer", data => {
+        console.log("@@@@@@answer")
+        console.log(data.to);
         socket.to(data.to).emit("answer-made", {
           socket: socket.id,
           answer: data.answer
