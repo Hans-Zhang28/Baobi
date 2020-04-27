@@ -6,17 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1. maximum-scale=1" />
 
     <title>Baobi</title>
-    <link rel="icon" 
+    <link
+      rel="icon" 
       type="image/png" 
-      href="images/bear-icon.png">
+      href="images/bear-icon.png"
+    />
     <link
       href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
   </head>
   <body>
+    <div id="popup" class="popup-wrapper hide">
+      <div class="popup-title">
+        <button type="button" id="popup-close">&times;</button>
+        <p>Can I have your name, my cutest?</p>
+      </div>
+      <div class="popup-body">
+        <label for="username">Name:</label>
+        <input type="text" id="username" name="username">
+        <input type="button" id="submit-button" value="Submit">
+      </div>
+    </div>
     <div class="container">
       <header class="header">
         <div class="logo-container">
@@ -28,11 +39,11 @@
       </header>
       <div class="content-container">
         <div class="active-users-panel" id="active-user-container">
-          <h3 class="panel-title">Active Users:</h3>
+          <p class="panel-title">Active Users:</p>
         </div>
         <div class="video-chat-container">
           <h2 class="talk-info" id="talking-with-info">
-            Select active user on the left menu.
+            Login as <span id="local-user"></span>
           </h2>
           <div class="video-container">
             <video autoplay class="remote-video" id="remote-video"></video>
@@ -41,7 +52,6 @@
         </div>
       </div>
     </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="index.js"></script>
+    <script src="./bundle.js"></script>
   </body>
 </html>

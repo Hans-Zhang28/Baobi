@@ -1,5 +1,6 @@
 {
-  "compilerOptions": {    "target": "es2018",
+  "compilerOptions": {
+    "target": "es2018",
     "module": "commonjs",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -9,7 +10,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "outDir": "./typescript",
-    "lib": ["es2018"],
+    "lib": ["es2018", "dom"],
   },
   "include": [
     "./server/**/*"

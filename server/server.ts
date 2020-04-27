@@ -23,12 +23,12 @@ export class Server {
   }
 
   private configureApp(): void {
-    this.app.use(express.static(path.join(__dirname, "../client")));
+    this.app.use(express.static(path.join(__dirname, '../webpack')));
   }
 
   private configureRoutes(): void {
     this.app.get("/", (req, res) => {
-      res.sendFile('index.html')
+      res.sendFile(path.join(__dirname, '../client/html/index.html'))
     });
   }
 
@@ -52,23 +52,25 @@ export class Server {
         });
       }
 
-      socket.on("call-user", (data: any) => {
-        socket.to(data.to).emit("call-made", {
+      socket.on("make-offer", (data: any) => {
+        socket.to(data.to).emit("offer-made", {
           offer: data.offer,
-          socket: socket.id
+          username: data.username,
+          socketId: socket.id,
         });
       });
 
       socket.on("make-answer", data => {
         socket.to(data.to).emit("answer-made", {
-          socket: socket.id,
-          answer: data.answer
+          answer: data.answer,
+          username: data.username,
+          socketId: socket.id,
         });
       });
 
-      socket.on("reject-call", data => {
-        socket.to(data.from).emit("call-rejected", {
-          socket: socket.id
+      socket.on("reject-offer", data => {
+        socket.to(data.from).emit("offer-rejected", {
+          socketId: socket.id
         });
       });
 
