@@ -137,7 +137,6 @@ export default class AppController {
       this.socket.on("answer-made", async (data: any) => {
         if (this.peerConnection) {
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-          debugger;
           const userContainerEl = document.getElementById(data.socketId);
           if (userContainerEl) {
             userContainerEl.setAttribute("class", "active-user active-user--selected");
@@ -160,35 +159,30 @@ export default class AppController {
   private async setupPeerConnection() {
     const { RTCPeerConnection } = window;
     trace('setup peer connection');
-    const certParams = { name: 'ECDSA', namedCurve: 'P-256' };
-    RTCPeerConnection.generateCertificate(certParams).then((cert) => {
-      trace('ECDSA certificate generated successfully.');
-      this.peerConnection = new RTCPeerConnection({
-        certificates: [cert],
-        iceServers: globalServers,
-      });
+    this.peerConnection = new RTCPeerConnection({
+      iceServers: globalServers,
+    });
 
-      this.peerConnection.ontrack = ({ streams: [stream] }) => {
-        if (this.remoteVideo) {
-          this.remoteVideo.srcObject = stream;
-        }
-      };
-  
-      this.peerConnection.onicecandidate = (event): void => {
-        if (event.candidate) {
-          console.log(`Send the candidate ${event.candidate} to the remote peer`);
-        }
+    this.peerConnection.ontrack = ({ streams: [stream] }) => {
+      if (this.remoteVideo) {
+        this.remoteVideo.srcObject = stream;
       }
-  
-      this.peerConnection.oniceconnectionstatechange = (): void => {
-        if (this.peerConnection &&
-            (this.peerConnection.iceConnectionState === "failed" ||
-            this.peerConnection.iceConnectionState === "disconnected" ||
-            this.peerConnection.iceConnectionState === "closed")) {
-          console.error('Failed to connect');
-        }
-      };
-    })
+    };
+
+    this.peerConnection.onicecandidate = (event): void => {
+      if (event.candidate) {
+        console.log(`Send the candidate ${event.candidate} to the remote peer`);
+      }
+    }
+
+    this.peerConnection.oniceconnectionstatechange = (): void => {
+      if (this.peerConnection &&
+          (this.peerConnection.iceConnectionState === "failed" ||
+          this.peerConnection.iceConnectionState === "disconnected" ||
+          this.peerConnection.iceConnectionState === "closed")) {
+        console.error('Failed to connect');
+      }
+    };
   }
 
   private initializeListener() {
