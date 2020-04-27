@@ -52,27 +52,23 @@ export class Server {
         });
       }
 
-      socket.on("call-user", (data: any) => {
-        console.log("@@@@@@call")
-        console.log(data.to);
-        socket.to(data.to).emit("call-made", {
+      socket.on("make-offer", (data: any) => {
+        socket.to(data.to).emit("offer-made", {
           offer: data.offer,
-          socket: socket.id
+          socketId: socket.id,
         });
       });
 
       socket.on("make-answer", data => {
-        console.log("@@@@@@answer")
-        console.log(data.to);
         socket.to(data.to).emit("answer-made", {
-          socket: socket.id,
-          answer: data.answer
+          answer: data.answer,
+          socketId: socket.id,
         });
       });
 
-      socket.on("reject-call", data => {
-        socket.to(data.from).emit("call-rejected", {
-          socket: socket.id
+      socket.on("reject-offer", data => {
+        socket.to(data.from).emit("offer-rejected", {
+          socketId: socket.id
         });
       });
 

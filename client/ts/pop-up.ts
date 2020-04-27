@@ -25,6 +25,11 @@ export default function addPopupListener(element: HTMLElement | null): void {
       element.style.display = "block";
       return;
     }
+    const username = (<HTMLInputElement>document.getElementById('username')).value || '小仙女🧚‍♀️';
+    const localUserSpan = document.getElementById('local-user');
+    if (localUserSpan) {
+      localUserSpan.innerHTML = username;
+    }
     element.style.display = "none";
   }
 }

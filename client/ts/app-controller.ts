@@ -11,44 +11,42 @@ const UI_ID_CONSTANTS = {
 
 };
 
-const globalServers = {
-  iceServers: [
-      { urls: "stun:stun01.sipphone.com" },
-      { urls: "stun:stun.ekiga.net" },
-      { urls: "stun:stun.fwdnet.net" },
-      { urls: "stun:stun.ideasip.com" },
-      { urls: "stun:stun.iptel.org" },
-      { urls: "stun:stun.rixtelecom.se" },
-      { urls: "stun:stun.schlund.de" },
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "stun:stun2.l.google.com:19302" },
-      { urls: "stun:stun3.l.google.com:19302" },
-      { urls: "stun:stun4.l.google.com:19302" },
-      { urls: "stun:stunserver.org" },
-      { urls: "stun:stun.softjoys.com" },
-      { urls: "stun:stun.voiparound.com" },
-      { urls: "stun:stun.voipbuster.com" },
-      { urls: "stun:stun.voipstunt.com" },
-      { urls: "stun:stun.voxgratia.org" },
-      { urls: "stun:stun.xten.com" },
-      {
-          urls: "turn:numb.viagenie.ca",
-          credential: "muazkh",
-          username: "webrtc@live.com"
-      },
-      {
-          urls: "turn:192.158.29.39:3478?transport=udp",
-          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
-          username: "28224511:1379330808"
-      },
-      {
-          urls: "turn:192.158.29.39:3478?transport=tcp",
-          credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
-          username: "28224511:1379330808"
-      }
-  ]
-};
+const globalServers = [
+    { urls: "stun:stun01.sipphone.com" },
+    { urls: "stun:stun.ekiga.net" },
+    { urls: "stun:stun.fwdnet.net" },
+    { urls: "stun:stun.ideasip.com" },
+    { urls: "stun:stun.iptel.org" },
+    { urls: "stun:stun.rixtelecom.se" },
+    { urls: "stun:stun.schlund.de" },
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
+    { urls: "stun:stunserver.org" },
+    { urls: "stun:stun.softjoys.com" },
+    { urls: "stun:stun.voiparound.com" },
+    { urls: "stun:stun.voipbuster.com" },
+    { urls: "stun:stun.voipstunt.com" },
+    { urls: "stun:stun.voxgratia.org" },
+    { urls: "stun:stun.xten.com" },
+    {
+        urls: "turn:numb.viagenie.ca",
+        credential: "muazkh",
+        username: "webrtc@live.com"
+    },
+    {
+        urls: "turn:192.158.29.39:3478?transport=udp",
+        credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+        username: "28224511:1379330808"
+    },
+    {
+        urls: "turn:192.158.29.39:3478?transport=tcp",
+        credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+        username: "28224511:1379330808"
+    }
+];
 
 export default class AppController {
   private localVideo: HTMLVideoElement | null;
@@ -59,9 +57,7 @@ export default class AppController {
 
   private activeUserContainer: HTMLElement | null;
 
-  private hasMadeCall: Boolean;
-
-  private beCalled: Boolean;
+  private hasMadeAnswer: Boolean;
 
   private peerConnection: RTCPeerConnection | null;
 
@@ -69,8 +65,7 @@ export default class AppController {
 
   public constructor() {
     trace('initialize default values');
-    this.hasMadeCall = false;
-    this.beCalled = false;
+    this.hasMadeAnswer = false;
     this.localVideo = null;
     this.remoteVideo = null;
     this.popup = null;
@@ -107,83 +102,89 @@ export default class AppController {
         }
       });
       
-      this.socket.on("call-made", async (data: any) => {
-        if (this.beCalled && this.socket) {
-          const confirmed = confirm(
-            `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
-          );
+      this.socket.on("offer-made", async (data: any) => {
+        // const confirmed = confirm(
+        //   `User "Socket: ${data.socketId}" wants to call you. Do accept this call?`
+        // );
 
-          if (!confirmed) {
-            this.socket.emit("reject-call", {
-              from: data.socket
-            });
-      
-            return;
-          }
-        }
+        // if (!confirmed && this.socket) {
+        //   this.socket.emit("reject-offer", {
+        //     from: data.socketId
+        //   });
+    
+        //   return;
+        // }
         
         if (this.peerConnection && this.socket) {
-          await this.peerConnection.setRemoteDescription(
-            new RTCSessionDescription(data.offer)
-          );
+          await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const userContainerEl = document.getElementById(data.socketId);
+          if (userContainerEl) {
+            userContainerEl.setAttribute("class", "active-user active-user--selected");
+          }
           const answer = await this.peerConnection.createAnswer();
           await this.peerConnection.setLocalDescription(new RTCSessionDescription(answer));
         
           this.socket.emit("make-answer", {
             answer,
-            to: data.socket
+            to: data.socketId
           });
-          this.beCalled = true;
         }
       });
       
       this.socket.on("answer-made", async (data: any) => {
         if (this.peerConnection) {
+          await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
           debugger;
-          await this.peerConnection.setRemoteDescription(
-            new RTCSessionDescription(data.answer)
-          );
+          const userContainerEl = document.getElementById(data.socketId);
+          if (userContainerEl) {
+            userContainerEl.setAttribute("class", "active-user active-user--selected");
+          }
         }
-        if (!this.hasMadeCall) {
-          this.callUser(data.socket);
-          this.hasMadeCall = true;
+        if (!this.hasMadeAnswer) {
+          this.createOffer(data.socketId);
+          this.hasMadeAnswer = true;
         }
       });
       
-      this.socket.on("call-rejected", (data: any) => {
-        alert(`User: "Socket: ${data.socket}" rejected your call.`);
+      this.socket.on("offer-rejected", (data: any) => {
+        alert(`User: "Socket: ${data.socketId}" rejected your call.`);
         this.unselectUsersFromList();
       });
     }
   }
 
-  private setupPeerConnection() {
+  private async setupPeerConnection() {
     const { RTCPeerConnection } = window;
     trace('setup peer connection');
-    this.peerConnection = new RTCPeerConnection(globalServers);
+    const certParams = { name: 'ECDSA', namedCurve: 'P-256' };
+    RTCPeerConnection.generateCertificate(certParams).then((cert) => {
+      trace('ECDSA certificate generated successfully.');
+      this.peerConnection = new RTCPeerConnection({
+        certificates: [cert],
+        iceServers: globalServers,
+      });
 
-    this.remoteVideo = <HTMLVideoElement>document.getElementById(UI_ID_CONSTANTS.remoteVideo);
-    this.peerConnection.ontrack = ({ streams: [stream] }) => {
-      debugger;
-      if (this.remoteVideo) {
-        this.remoteVideo.srcObject = stream;
+      this.peerConnection.ontrack = ({ streams: [stream] }) => {
+        if (this.remoteVideo) {
+          this.remoteVideo.srcObject = stream;
+        }
+      };
+  
+      this.peerConnection.onicecandidate = (event): void => {
+        if (event.candidate) {
+          console.log(`Send the candidate ${event.candidate} to the remote peer`);
+        }
       }
-    };
-
-    this.peerConnection.onicecandidate = (event): void => {
-      if (event.candidate) {
-        console.log(`Send the candidate ${event.candidate} to the remote peer`);
-      }
-    }
-
-    this.peerConnection.oniceconnectionstatechange = (): void => {
-      if (this.peerConnection &&
-          (this.peerConnection.iceConnectionState === "failed" ||
-          this.peerConnection.iceConnectionState === "disconnected" ||
-          this.peerConnection.iceConnectionState === "closed")) {
-        console.error('Failed to connect');
-      }
-    };
+  
+      this.peerConnection.oniceconnectionstatechange = (): void => {
+        if (this.peerConnection &&
+            (this.peerConnection.iceConnectionState === "failed" ||
+            this.peerConnection.iceConnectionState === "disconnected" ||
+            this.peerConnection.iceConnectionState === "closed")) {
+          console.error('Failed to connect');
+        }
+      };
+    })
   }
 
   private initializeListener() {
@@ -192,7 +193,7 @@ export default class AppController {
     this.popup = document.getElementById(UI_ID_CONSTANTS.popup);
     popUpController(this.popup);
     this.activeUserContainer = document.getElementById(UI_ID_CONSTANTS.activeUserContainer);
-    this.remoteVideo
+    this.remoteVideo = <HTMLVideoElement>document.getElementById(UI_ID_CONSTANTS.remoteVideo);
   }
 
 
@@ -221,12 +222,7 @@ export default class AppController {
   
     userContainerEl.addEventListener("click", () => {
       this.unselectUsersFromList();
-      userContainerEl.setAttribute("class", "active-user active-user--selected");
-      const talkingWithInfo = document.getElementById("talking-with-info");
-      if (talkingWithInfo) {
-        talkingWithInfo.innerHTML = `Talking with: "Socket: ${socketId}"`;
-        this.callUser(socketId);
-      }
+      this.createOffer(socketId);
     });
   
     return userContainerEl;
@@ -242,7 +238,7 @@ export default class AppController {
     });
   }
 
-  private async callUser(socketId: string): Promise<void> {
+  private async createOffer(socketId: string): Promise<void> {
     const offerOptions: RTCOfferOptions = {
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
@@ -252,7 +248,7 @@ export default class AppController {
       const offer = await this.peerConnection.createOffer(offerOptions);
       await this.peerConnection.setLocalDescription(new RTCSessionDescription(offer));
 
-      this.socket.emit("call-user", {
+      this.socket.emit("make-offer", {
         offer,
         to: socketId
       });
