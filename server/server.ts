@@ -55,6 +55,7 @@ export class Server {
       socket.on("make-offer", (data: any) => {
         socket.to(data.to).emit("offer-made", {
           offer: data.offer,
+          username: data.username,
           socketId: socket.id,
         });
       });
@@ -62,6 +63,7 @@ export class Server {
       socket.on("make-answer", data => {
         socket.to(data.to).emit("answer-made", {
           answer: data.answer,
+          username: data.username,
           socketId: socket.id,
         });
       });

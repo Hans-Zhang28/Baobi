@@ -120,12 +120,15 @@ export default class AppController {
           const userContainerEl = document.getElementById(data.socketId);
           if (userContainerEl) {
             userContainerEl.setAttribute("class", "active-user active-user--selected");
+            userContainerEl.innerHTML = data.username;
           }
           const answer = await this.peerConnection.createAnswer();
           await this.peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+          const username = (<HTMLInputElement>document.getElementById('username')).value || '小仙女🧚‍♀️';
         
           this.socket.emit("make-answer", {
             answer,
+            username,
             to: data.socketId
           });
         }
@@ -138,6 +141,7 @@ export default class AppController {
           const userContainerEl = document.getElementById(data.socketId);
           if (userContainerEl) {
             userContainerEl.setAttribute("class", "active-user active-user--selected");
+            userContainerEl.innerHTML = data.username;
           }
         }
         if (!this.hasMadeAnswer) {
@@ -216,7 +220,7 @@ export default class AppController {
     userContainerEl.setAttribute("class", "active-user");
     userContainerEl.setAttribute("id", socketId);
     usernameEl.setAttribute("class", "username");
-    usernameEl.innerHTML = `Socket: ${socketId}`;
+    usernameEl.innerHTML = 'Unknown';
   
     userContainerEl.appendChild(usernameEl);
   
@@ -247,9 +251,11 @@ export default class AppController {
     if (this.peerConnection && this.socket) {
       const offer = await this.peerConnection.createOffer(offerOptions);
       await this.peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+      const username = (<HTMLInputElement>document.getElementById('username')).value || '小仙女🧚‍♀️';
 
       this.socket.emit("make-offer", {
         offer,
+        username,
         to: socketId
       });
     }
