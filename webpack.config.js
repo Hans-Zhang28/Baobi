@@ -1,10 +1,12 @@
 const path = require('path');
-const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const CACHE_PATH = path.resolve(__dirname, './tmp/cache/webpack');
+
+// const CACHE_PATH = path.resolve(__dirname, './tmp/cache/webpack');
 
 module.exports = {
-  entry: './client',
+  entry: './client/index.ts',
+  mode: 'development',
   module: {
     rules: [
       {
@@ -22,17 +24,32 @@ module.exports = {
        }]
       },
       {
-        test: /\.?tsx$/,
+        test: /\.?ts$/,
         exclude: /(node_modules)/,
         use: 'ts-loader'
       },
     ],
   },
   devServer: {
-    contentBase: './webpack',
+    port: 3000,
+    proxy: {
+      '/socket.io/*': {
+        target: 'http://localhost:8080',
+      }
+    },
+    contentBase: path.resolve(__dirname, 'webpack'),
+    hot: true,
+    injectHot: true,
+    inline: true,
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      inject: true,
+      template: './client/html/index.html',
+    })
+  ],
   output: {
-    filename: 'index.js',
+    filename: 'bundle.js',
     path: path.resolve(__dirname, 'webpack'),
   },
   resolve: {
