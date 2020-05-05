@@ -255,7 +255,6 @@ export default class AppController {
 
     this.peerConnection.ontrack = (event): void => {
       trace('Get remote stream');
-      console.log(event.streams[0]);
       if (this.remoteVideo) {
         this.remoteVideo.srcObject = event.streams[0];
       }
@@ -265,10 +264,10 @@ export default class AppController {
       if (event.candidate) {
         trace(`Send the candidate ${event.candidate.candidate} to the remote peer`);
        
-        if (this.socket) {
+        if (this.socket && this.targetSocketId) {
           this.socket.emit('new-ice-candidate', {
             candidate: event.candidate,
-            socketId: this.targetSocketId,
+            to: this.targetSocketId,
           });
         }
       }
