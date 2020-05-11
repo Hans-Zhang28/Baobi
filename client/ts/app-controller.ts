@@ -90,6 +90,24 @@ export default class AppController {
 
     trace('Setup signaling connection');
     this.setupSignaling();
+
+    trace('Setup video tags for IOS devices');
+    this.setupVideoTag();
+  }
+
+  private setupVideoTag() {
+    // iPad or iPhone
+    const userAgent = window.navigator.userAgent;
+    if (userAgent.match(/iPad/i) || userAgent.match(/iPhone/i)) {
+      if (this.remoteVideo) {
+        this.remoteVideo.setAttributeNode(document.createAttribute('playsinline'));
+        this.remoteVideo.setAttributeNode(document.createAttribute('controls'));
+      }
+      if (this.localVideo) {
+        this.localVideo.setAttributeNode(document.createAttribute('playsinline'));
+        this.localVideo.setAttributeNode(document.createAttribute('controls'));
+      }
+    }
   }
 
   private setupSignaling() {
