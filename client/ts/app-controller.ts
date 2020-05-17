@@ -97,17 +97,15 @@ export default class AppController {
 
   private setupVideoTag() {
     // iPad or iPhone
-    const userAgent = window.navigator.userAgent;
-    if (userAgent.match(/iPad/i) || userAgent.match(/iPhone/i)) {
-      if (this.remoteVideo) {
-        this.remoteVideo.setAttributeNode(document.createAttribute('playsinline'));
-        this.remoteVideo.setAttributeNode(document.createAttribute('controls'));
-      }
-      if (this.localVideo) {
-        this.localVideo.setAttributeNode(document.createAttribute('playsinline'));
-        this.localVideo.setAttributeNode(document.createAttribute('controls'));
-      }
-    }
+    // const userAgent = window.navigator.userAgent;
+    // if (userAgent.match(/iPad/i) || userAgent.match(/iPhone/i)) {
+    //   if (this.remoteVideo) {
+    //     this.remoteVideo.setAttributeNode(document.createAttribute('playsinline'));
+    //   }
+    //   if (this.localVideo) {
+    //     this.localVideo.setAttributeNode(document.createAttribute('playsinline'));
+    //   }
+    // }
   }
 
   private setupSignaling() {
@@ -376,7 +374,8 @@ export default class AppController {
       trace('Attach webcam stream to transceiver');
       this.webcamStream.getTracks().forEach((track: MediaStreamTrack) => {
         if (this.peerConnection && this.webcamStream) {
-          this.transceiver = this.peerConnection.addTransceiver(track, {streams: [this.webcamStream]});
+          trace(`Attach ${track.kind} stream ${this.webcamStream}`);
+          this.transceiver = this.peerConnection.addTransceiver(track.kind, {streams: [this.webcamStream]});
         }
       });
     } catch(e) {
