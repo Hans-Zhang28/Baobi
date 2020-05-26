@@ -215,7 +215,6 @@ export default class AppController {
               await this.peerConnection.addIceCandidate(candidate);
             }
           } catch(e) {
-            console.log(e);
             console.error('Failed to add ice candidate');
           }
         }
@@ -248,42 +247,6 @@ export default class AppController {
     this.peerConnection = new RTCPeerConnection({
       iceServers: globalServers,
     });
-
-    // this.peerConnection.onnegotiationneeded = async (event): Promise<void> => {
-      // trace('Peer connection negotiation needed');
-
-      // try {
-      //   if (this.peerConnection) {
-      //     trace("Creating offer");
-      //     const offer = await this.peerConnection.createOffer();
-      
-      //     // If the connection hasn't yet achieved the "stable" state,
-      //     // return to the caller. Ather negotiationneeded event
-      //     // will be fired when the state stabilizes.
-      //     if (this.peerConnection.signalingState != "stable") {
-      //       trace("The connection isn't stable yet; postponing...")
-      //       return;
-      //     }
-      
-      //     // Establish the offer as the local peer's current
-      //     // description.
-      //     trace("Setting local description to the offer");
-      //     await this.peerConnection.setLocalDescription(offer);
-      
-      //     // Send the offer to the remote peer.
-      //     if (this.socket) {
-      //       trace("Sending the offer to the remote peer");
-      //       this.socket.emit('make-offer', {
-      //         offer,
-      //         username: this.myUsername,
-      //         to: this.targetSocketId,
-      //       });
-      //     }
-      //   }
-      // } catch(err) {
-      //   console.error("The following error occurred while handling the negotiationneeded event:");
-      // };
-    // }
 
     this.peerConnection.ontrack = (event): void => {
       trace('Get remote stream');
@@ -389,17 +352,6 @@ export default class AppController {
     if (this.isCaller) {
       this.prepareToStart();
     }
-    // try {
-    //   trace('Attach webcam stream to transceiver');
-    //   this.webcamStream.getTracks().forEach((track: MediaStreamTrack) => {
-    //     if (this.peerConnection && this.webcamStream) {
-    //       trace(`Attach ${track.kind} stream`);
-    //       this.transceiver = this.peerConnection.addTransceiver(track, {streams: [this.webcamStream]});
-    //     }
-    //   });
-    // } catch(e) {
-    //   console.error('Failed to add tracks from the stream to the RTCPeerConnection');
-    // }
   }
 
   private async prepareToStart() {
