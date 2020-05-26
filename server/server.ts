@@ -8,8 +8,6 @@ export class Server {
   private app: Application;
   private io: SocketIOServer;
 
-  private activeSockets: string[] = [];
-
   private readonly DEFAULT_PORT = process.env.PORT || 8080;
 
   constructor() {
@@ -34,38 +32,46 @@ export class Server {
 
   private handleSocketConnection(): void {
     this.io.on('connection', socket => {
-      const existingSocket = this.activeSockets.find(
-        existingSocket => existingSocket === socket.id
-      );
+      socket.on('create or join', (room: any) => {
+    
+        let clientsInRoom = this.io.sockets.adapter.rooms[room];
+        let numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
+        
+        if (numClients === 0) {
+          socket.join(room);
+          socket.emit('created', room);
+        } else if (numClients === 1) {
+          this.io.sockets.in(room).emit('join', {
+            user: socket.id,
+          });
+          socket.join(room);
+          socket.emit('joined', {
+            user: Object.keys(clientsInRoom.sockets)[0],
+          });
+          this.io.sockets.in(room).emit('ready');
+        } else { // max two clients
+          socket.emit('full', room);
+        }
+      });
 
-      if (!existingSocket) {
-        this.activeSockets.push(socket.id);
-
-        socket.emit('update-user-list', {
-          users: this.activeSockets.filter(
-            existingSocket => existingSocket !== socket.id
-          )
-        });
-
-        socket.broadcast.emit('update-user-list', {
-          users: [socket.id]
-        });
-      }
-
-      socket.on('make-offer', (data: any) => {
-        socket.to(data.to).emit('offer-made', {
+      socket.on('video-offer', (data: any) => {
+        socket.to(data.to).emit('video-offer', {
           offer: data.offer,
           username: data.username,
           socketId: socket.id,
         });
       });
 
-      socket.on('make-answer', data => {
-        socket.to(data.to).emit('answer-made', {
+      socket.on('video-answer', (data: any) => {
+        socket.to(data.to).emit('video-answer', {
           answer: data.answer,
           username: data.username,
           socketId: socket.id,
         });
+      });
+
+      socket.on('stream-ready', data => {
+        socket.broadcast.emit('stream-ready');
       });
 
       socket.on('new-ice-candidate', data => {
@@ -76,16 +82,13 @@ export class Server {
       });
 
       socket.on('reject-offer', data => {
-        socket.to(data.from).emit('offer-rejected', {
+        socket.to(data.from).emit('reject-offer', {
           socketId: socket.id
         });
       });
 
-      socket.on('disconnect', () => {
-        this.activeSockets = this.activeSockets.filter(
-          existingSocket => existingSocket !== socket.id
-        );
-        socket.broadcast.emit('remove-user', {
+      socket.on('disconnect', data => {
+        socket.to(data.to).emit('remove-user', {
           socketId: socket.id
         });
       });
