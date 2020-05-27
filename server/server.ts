@@ -70,7 +70,7 @@ export class Server {
         });
       });
 
-      socket.on('stream-ready', data => {
+      socket.on('stream-ready', () => {
         socket.broadcast.emit('stream-ready');
       });
 
@@ -87,8 +87,8 @@ export class Server {
         });
       });
 
-      socket.on('disconnect', data => {
-        socket.to(data.to).emit('remove-user', {
+      socket.on('disconnect', () => {
+        socket.broadcast.emit('close-conncetion', {
           socketId: socket.id
         });
       });
