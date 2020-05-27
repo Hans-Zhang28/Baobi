@@ -161,7 +161,9 @@ export default class AppController {
           elToRemove.remove();
         }
 
-        this.handleRemoteHangUp();
+        if (socketId === this.targetSocketId) {
+          this.handleRemoteHangUp();
+        }
       });
       
       this.socket.on('video-offer', async (data: any) => {
@@ -407,7 +409,7 @@ export default class AppController {
   }
 
   private hangUp() {
-    trace('Hang up');
+    trace('Hang up local peer connection');
     if (this.peerConnection) {
       if (this.sender) {
         this.peerConnection.removeTrack(this.sender);
