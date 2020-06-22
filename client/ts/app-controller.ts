@@ -1,5 +1,5 @@
-import io from 'socket.io-client';
 import localVideoController from './local-video';
+import SignalingChannel from './signaling-channel';
 import popUpController from './pop-up';
 import { trace } from './utils'; 
 
@@ -48,7 +48,7 @@ const globalServers = [
     // }
 ];
 
-export default class AppController {
+export default class AppController implements Baobi.Mediator {
   private localVideo: HTMLVideoElement | null;
 
   private remoteVideo: HTMLVideoElement | null;
@@ -60,8 +60,6 @@ export default class AppController {
   private isCaller: Boolean;
 
   private peerConnection: RTCPeerConnection | null; // RTCPeerConnection
-
-  private socket: SocketIOClient.Socket | null;
 
   private myUsername: string;
 
@@ -77,6 +75,8 @@ export default class AppController {
 
   private isChannelReady: Boolean;
 
+  private channel: SignalingChannel;
+
   public constructor() {
     trace('Initialize default values');
     this.isCaller = false;
@@ -85,7 +85,6 @@ export default class AppController {
     this.popup = null;
     this.activeUserContainer = null;
     this.peerConnection = null;
-    this.socket = null;
     this.myUsername = 'Unknown';
     this.webcamStream = null;
     // this.transceiver = null;
@@ -95,7 +94,8 @@ export default class AppController {
     this.isChannelReady = false;
 
     trace('Setup signaling connection');
-    this.setupSignaling();
+    // this.setupSignaling();
+    this.channel = new SignalingChannel(this);
 
     trace('Initialize all listeners');
     this.initializeListener();
@@ -120,110 +120,6 @@ export default class AppController {
     }
   }
 
-  private setupSignaling() {
-    this.socket = io();
-    
-    if (this.socket) {
-      trace('Create or join room for Baobi');
-      this.socket.emit('create or join', 'Baobi');
-
-      this.socket.on('created', (room: string) => {
-        trace('Created room ' + room);
-        this.isCaller = true;
-      });
-
-      this.socket.on('full', (room: string) => {
-        trace(`${room} is full`);
-      });
-      
-      this.socket.on('join', ({ user }: any) => {
-        trace(`Another peer ${user} made a request to join room`);
-        this.isChannelReady = true;
-        this.targetSocketId = user;
-        // this.updateUserList(users);
-      });
-      
-      this.socket.on('joined', ({ user }: any) => {
-        trace(`${user} joined`);
-        this.isChannelReady = true;
-        this.targetSocketId = user;
-        // this.updateUserList(users);
-      });
-
-      this.socket.on('stream-ready', () => {
-        this.prepareToStart();
-      });
-      
-      this.socket.on('close-conncetion', ({ socketId }: any) => {
-        const elToRemove = document.getElementById(socketId);
-      
-        if (elToRemove) {
-          elToRemove.remove();
-        }
-
-        if (socketId === this.targetSocketId) {
-          this.handleRemoteHangUp();
-        }
-      });
-      
-      this.socket.on('video-offer', async (data: any) => {
-          trace(`Receive offer from caller ${data.username}`);
-          this.targetSocketId = data.socketId;
-
-          if (!this.isCaller) {
-            const confirmed = window.confirm(`User 'Socket: ${data.username}' wants to call you. Do accept this call?`);
-            if (!confirmed) {
-              if (this.socket) {
-                trace('Reject the offer');
-                this.socket.emit('reject-offer', {
-                  from: data.socketId
-                });
-              }
-              return;
-            }
-          }
-          
-          if (!this.isCaller && !this.isCalling) {
-            this.prepareToStart();
-          }
-
-          this.makeAnswer(data);
-      });
-      
-      this.socket.on('video-answer', async (data: any) => {
-        if (this.peerConnection) {
-          trace(`Receive answer from callee ${data.username}`);
-          const userContainerEl = document.getElementById(data.socketId);
-          if (userContainerEl) {
-            userContainerEl.setAttribute('class', 'active-user active-user--selected');
-            userContainerEl.innerHTML = data.username;
-          }
-          await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        }
-      });
-      
-      this.socket.on('reject-offer', (data: any) => {
-        alert(`User: 'Socket: ${data.socketId}' rejected your call.`);
-        this.unselectUsersFromList();
-      });
-
-      this.socket.on('new-ice-candidate', async (data: any) => {
-        if (this.isCalling) {
-          const candidate = new RTCIceCandidate(data.candidate);
-  
-          trace("Adding received ICE candidate: " + JSON.stringify(candidate));
-          try {
-            if (this.peerConnection) {
-              await this.peerConnection.addIceCandidate(candidate);
-            }
-          } catch(e) {
-            console.error('Failed to add ice candidate');
-          }
-        }
-      });
-    }
-  }
-
   private initializeListener() {
     this.localVideo = <HTMLVideoElement>document.getElementById(UI_ID_CONSTANTS.localVideo);
     localVideoController(this.localVideo); // make local video draggable
@@ -234,11 +130,7 @@ export default class AppController {
 
     window.onbeforeunload = () => {
       trace('Before unload everything');
-      if (this.socket) {
-        this.socket.emit('disconnect', {
-          to: this.targetSocketId,
-        });
-      }
+      this.channel.disconnect({ socketId: this.targetSocketId });
       this.hangUp();
     }
   }
@@ -261,10 +153,10 @@ export default class AppController {
       if (event.candidate) {
         trace(`Send the candidate ${event.candidate.candidate} to the remote peer`);
        
-        if (this.socket && this.targetSocketId) {
-          this.socket.emit('new-ice-candidate', {
+        if (this.targetSocketId) {
+          this.channel.createNewIceCandidate({
             candidate: event.candidate,
-            to: this.targetSocketId,
+            socketId: this.targetSocketId,
           });
         }
       }
@@ -347,39 +239,10 @@ export default class AppController {
       return;
     }
 
-    if (this.socket) {
-      this.socket.emit('stream-ready');
-    }
+    this.channel.readyToStrem();
 
     if (this.isCaller) {
       this.prepareToStart();
-    }
-  }
-
-  private async prepareToStart() {
-    trace(`Prepare to start: isCalling ${this.isCalling}, webcamStream ${this.webcamStream}, isCannelReady ${this.isChannelReady}`);
-    if (!this.isCalling && this.webcamStream && this.isChannelReady) {
-      trace('Setup peer connection');
-      this.setupPeerConnection();
-
-      try {
-        if (this.webcamStream) {
-          this.webcamStream.getTracks().forEach((track: MediaStreamTrack) => {
-            if (this.peerConnection && this.webcamStream) {
-              trace(`Attach ${track.kind} stream`);
-              this.sender = this.peerConnection.addTrack(track, this.webcamStream);
-            }
-          });
-        }
-        this.isCalling = true;
-      } catch(e) {
-        console.error('Failed to attach stream: ' + e.message)
-        return;
-      }
-  
-      if (this.isCaller) {
-        await this.makeCall();
-      }
     }
   }
 
@@ -392,14 +255,11 @@ export default class AppController {
         trace('Set local description');
         await this.peerConnection.setLocalDescription(offer);
 
-        if (this.socket) {
-          trace('Send offer');
-          this.socket.emit('video-offer', {
-            offer: this.peerConnection.localDescription,
-            username: this.myUsername,
-            to: this.targetSocketId,
-          });
-        }
+        this.channel.createOffer({
+          socketId: this.targetSocketId,
+          username: this.myUsername,
+          offer: this.peerConnection.localDescription,
+        });
       }
 
   
@@ -427,9 +287,9 @@ export default class AppController {
     this.hangUp();
   }
 
-  private async makeAnswer(data: any) {
-    const desc = new RTCSessionDescription(data.offer);
-    if (this.peerConnection && this.socket) {
+  private async makeAnswer({ username, socketId, offer }: Baobi.SocketMessage): Promise<void> {
+    const desc = new RTCSessionDescription(offer);
+    if (this.peerConnection) {
 
       // connect when peer connection is stable
       if (this.peerConnection.signalingState !== 'stable') {
@@ -444,21 +304,117 @@ export default class AppController {
       trace('Setting remote description')
       await this.peerConnection.setRemoteDescription(desc);
 
-      const userContainerEl = document.getElementById(data.socketId);
+      const userContainerEl = document.getElementById(socketId);
       if (userContainerEl) {
         userContainerEl.setAttribute('class', 'active-user active-user--selected');
-        userContainerEl.innerHTML = data.username;
+        userContainerEl.innerHTML = username || 'Anonymous';
       }
 
       trace('Create and send answer to caller')
       const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(new RTCSessionDescription(answer));
     
-      this.socket.emit('video-answer', {
-        answer,
-        username: this.myUsername,
-        to: data.socketId
-      });
+      this.channel.createAnswer({ socketId, answer, username: this.myUsername });
     }
+  }
+
+  public updateCallerStatus(status: boolean): void {
+    this.isCaller = status;
+  }
+
+  public async prepareToStart() {
+    trace(`Prepare to start: isCalling ${this.isCalling}, webcamStream ${this.webcamStream}, isCannelReady ${this.isChannelReady}`);
+    if (!this.isCalling && this.webcamStream && this.isChannelReady) {
+      trace('Setup peer connection');
+      this.setupPeerConnection();
+
+      try {
+        if (this.webcamStream) {
+          this.webcamStream.getTracks().forEach((track: MediaStreamTrack) => {
+            if (this.peerConnection && this.webcamStream) {
+              trace(`Attach ${track.kind} stream`);
+              this.sender = this.peerConnection.addTrack(track, this.webcamStream);
+            }
+          });
+        }
+        this.isCalling = true;
+      } catch(e) {
+        console.error('Failed to attach stream: ' + e.message)
+        return;
+      }
+  
+      if (this.isCaller) {
+        await this.makeCall();
+      }
+    }
+  }
+
+  public prepareToStop(socketId: string): void {
+    const elToRemove = document.getElementById(socketId);
+    if (elToRemove) {
+      elToRemove.remove();
+    }
+
+    if (socketId === this.targetSocketId) {
+      this.handleRemoteHangUp();
+    }
+  }
+
+  public async handleOffer({ username, socketId, offer }: Baobi.SocketMessage): Promise<void> {
+    trace(`Receive offer from caller ${username}`);
+    this.updateTargetId(socketId);
+
+    if (!this.isCaller) {
+      const confirmed = window.confirm(`User 'Socket: ${username}' wants to call you. Do accept this call?`);
+      if (!confirmed) {
+        this.channel.rejectOffer(socketId);
+        return;
+      }
+    }
+    
+    if (!this.isCaller && !this.isCalling) {
+      await this.prepareToStart();
+    }
+
+    await this.makeAnswer({ username, socketId, offer});
+  }
+
+  public async handleAnswer({ username, socketId, answer }: Baobi.SocketMessage): Promise<void> {
+    if (this.peerConnection) {
+      trace(`Receive answer from callee ${username}`);
+      const userContainerEl = document.getElementById(socketId);
+      if (userContainerEl) {
+        userContainerEl.setAttribute('class', 'active-user active-user--selected');
+        userContainerEl.innerHTML = username || 'Anonymous';
+      }
+      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+  }
+
+  public async handleNewIceCandidate({ candidate }: Baobi.SocketMessage): Promise<void> {
+    if (this.isCalling) {
+      const candidateInstance = new RTCIceCandidate(candidate);
+
+      trace("Adding received ICE candidate: " + JSON.stringify(candidateInstance));
+      try {
+        if (this.peerConnection) {
+          await this.peerConnection.addIceCandidate(candidateInstance);
+        }
+      } catch(e) {
+        console.error('Failed to add ice candidate');
+      }
+    }
+  }
+
+  public handleRejection({ socketId }: Baobi.SocketMessage): void {
+    this.unselectUsersFromList()
+  }
+
+  public updateChannelStatus(status: boolean) {
+    this.isChannelReady = status;
+  }
+
+  public updateTargetId(userId: string) {
+    this.targetSocketId = userId;
   }
 }

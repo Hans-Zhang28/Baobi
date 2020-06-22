@@ -1,54 +1,54 @@
 import express, { Application } from 'express';
-import socketIO, { Server as SocketIOServer } from 'socket.io';
+import socketIO, { Server as SocketIOServer, Socket } from 'socket.io';
 import { createServer, Server as HTTPServer } from 'http';
 import path from 'path';
 
-export class Server {
-  private httpServer: HTTPServer;
-  private app: Application;
-  private io: SocketIOServer;
+export default class Server implements Baobi.Server {
+  private _httpServer: HTTPServer;
+  private _app: Application;
+  private _io: SocketIOServer;
 
   private readonly DEFAULT_PORT = process.env.PORT || 8080;
 
   constructor() {
-    this.app = express();
-    this.httpServer = createServer(this.app);
-    this.io = socketIO(this.httpServer);
+    this._app = express();
+    this._httpServer = createServer(this._app);
+    this._io = socketIO(this._httpServer);
 
     this.configureApp();
     this.configureRoutes();
-    this.handleSocketConnection();
+    this.handleSocketConnect_ion();
   }
 
   private configureApp(): void {
-    this.app.use(express.static(path.join(__dirname, '../webpack')));
+    this._app.use(express.static(path.join(__dirname, '../webpack')));
   }
 
   private configureRoutes(): void {
-    this.app.get('/', (req, res) => {
+    this._app.get('/', (req, res) => {
       res.sendFile(path.join(__dirname, '../webpack/index.html'))
     });
   }
 
-  private handleSocketConnection(): void {
-    this.io.on('connection', socket => {
-      socket.on('create or join', (room: any) => {
+  private handleSocketConnect_ion(): void {
+    this._io.on('connection', (socket: Socket) => {
+      socket.on('create or join', (room: string) => {
     
-        let clientsInRoom = this.io.sockets.adapter.rooms[room];
+        let clientsInRoom = this._io.sockets.adapter.rooms[room];
         let numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
         
         if (numClients === 0) {
           socket.join(room);
           socket.emit('created', room);
         } else if (numClients === 1) {
-          this.io.sockets.in(room).emit('join', {
-            user: socket.id,
+          this._io.sockets.in(room).emit('join', {
+            socketId: socket.id,
           });
           socket.join(room);
           socket.emit('joined', {
-            user: Object.keys(clientsInRoom.sockets)[0],
+            socketId: Object.keys(clientsInRoom.sockets)[0],
           });
-          this.io.sockets.in(room).emit('ready');
+          this._io.sockets.in(room).emit('ready');
         } else { // max two clients
           socket.emit('full', room);
         }
@@ -74,14 +74,14 @@ export class Server {
         socket.broadcast.emit('stream-ready');
       });
 
-      socket.on('new-ice-candidate', data => {
+      socket.on('new-ice-candidate', (data: any) => {
         socket.to(data.to).emit('new-ice-candidate', {
           candidate: data.candidate,
           socketId: socket.id,
         });
       });
 
-      socket.on('reject-offer', data => {
+      socket.on('reject-offer', (data: any) => {
         socket.to(data.from).emit('reject-offer', {
           socketId: socket.id
         });
@@ -96,7 +96,7 @@ export class Server {
   }
 
   public listen(callback: (port: number | string) => void): void {
-    this.httpServer.listen(this.DEFAULT_PORT, () => {
+    this._httpServer.listen(this.DEFAULT_PORT, () => {
       callback(this.DEFAULT_PORT);
     });
   }
