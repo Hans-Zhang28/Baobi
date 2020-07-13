@@ -1,52 +1,17 @@
 import localVideoController from './local-video';
 import SignalingChannel from './signaling-channel';
 import popUpController from './pop-up';
-import { trace } from './utils'; 
+import { trace, alert } from './utils'; 
+import PeerConnection from './peer-connection';
+
+const TARGET = 'APP_CONTROLLER';
 
 const UI_ID_CONSTANTS = {
   localVideo: 'local-video',
   remoteVideo: 'remote-video',
   popup: 'popup',
   activeUserContainer: 'active-user-container',
-
 };
-
-const globalServers = [
-    { urls: 'stun:stun01.sipphone.com' },
-    // { urls: 'stun:stun.ekiga.net' },
-    // { urls: 'stun:stun.fwdnet.net' },
-    // { urls: 'stun:stun.ideasip.com' },
-    // { urls: 'stun:stun.iptel.org' },
-    // { urls: 'stun:stun.rixtelecom.se' },
-    // { urls: 'stun:stun.schlund.de' },
-    // { urls: 'stun:stun.l.google.com:19302' },
-    // { urls: 'stun:stun1.l.google.com:19302' },
-    // { urls: 'stun:stun2.l.google.com:19302' },
-    // { urls: 'stun:stun3.l.google.com:19302' },
-    // { urls: 'stun:stun4.l.google.com:19302' },
-    // { urls: 'stun:stunserver.org' },
-    // { urls: 'stun:stun.softjoys.com' },
-    // { urls: 'stun:stun.voiparound.com' },
-    // { urls: 'stun:stun.voipbuster.com' },
-    // { urls: 'stun:stun.voipstunt.com' },
-    // { urls: 'stun:stun.voxgratia.org' },
-    // { urls: 'stun:stun.xten.com' },
-    {
-        urls: 'turn:numb.viagenie.ca',
-        credential: 'muazkh',
-        username: 'webrtc@live.com'
-    },
-    // {
-    //     urls: 'turn:192.158.29.39:3478?transport=udp',
-    //     credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
-    //     username: '28224511:1379330808'
-    // },
-    // {
-    //     urls: 'turn:192.158.29.39:3478?transport=tcp',
-    //     credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
-    //     username: '28224511:1379330808'
-    // }
-];
 
 export default class AppController implements Baobi.Mediator {
   private localVideo: HTMLVideoElement | null;
@@ -59,7 +24,7 @@ export default class AppController implements Baobi.Mediator {
 
   private isCaller: Boolean;
 
-  private peerConnection: RTCPeerConnection | null; // RTCPeerConnection
+  private peerConnection: PeerConnection; // RTCPeerConnection
 
   private myUsername: string;
 
@@ -78,13 +43,12 @@ export default class AppController implements Baobi.Mediator {
   private channel: SignalingChannel;
 
   public constructor() {
-    trace('Initialize default values');
+    trace('Initialize default values', TARGET);
     this.isCaller = false;
     this.localVideo = null;
     this.remoteVideo = null;
     this.popup = null;
     this.activeUserContainer = null;
-    this.peerConnection = null;
     this.myUsername = 'Unknown';
     this.webcamStream = null;
     // this.transceiver = null;
@@ -93,17 +57,19 @@ export default class AppController implements Baobi.Mediator {
     this.isCalling = false;
     this.isChannelReady = false;
 
-    trace('Setup signaling connection');
-    // this.setupSignaling();
+    trace('Setup signaling channel', TARGET);
     this.channel = new SignalingChannel(this);
 
-    trace('Initialize all listeners');
+    trace('Initialize RTC peer connection', TARGET);
+    this.peerConnection = new PeerConnection(this);
+
+    trace('Initialize all listeners', TARGET);
     this.initializeListener();
 
-    trace('Setup video tags for IOS devices');
+    trace('Setup video tags for IOS devices', TARGET);
     this.setupVideoTag();
 
-    trace('Setup web cam');
+    trace('Setup web cam', TARGET);
     this.setupWebcamStream();
   }
 
@@ -129,47 +95,48 @@ export default class AppController implements Baobi.Mediator {
     this.remoteVideo = <HTMLVideoElement>document.getElementById(UI_ID_CONSTANTS.remoteVideo);
 
     window.onbeforeunload = () => {
-      trace('Before unload everything');
+      trace('Before unload everything', TARGET);
       this.channel.disconnect({ socketId: this.targetSocketId });
       this.hangUp();
     }
   }
 
   private setupPeerConnection() {
-    const { RTCPeerConnection } = window;
-    trace('Setup peer connection');
-    this.peerConnection = new RTCPeerConnection({
-      iceServers: globalServers,
-    });
+    // const { RTCPeerConnection } = window;
+    // trace('Setup peer connection');
+    // this.peerConnection = new RTCPeerConnection({
+    //   iceServers: globalServers,
+    // });
 
-    this.peerConnection.ontrack = (event): void => {
-      trace('Get remote stream');
-      if (this.remoteVideo) {
-        this.remoteVideo.srcObject = event.streams[0];
-      }
-    };
+    // this.peerConnection.ontrack = (event): void => {
+    //   trace('Get remote stream');
+    //   if (this.remoteVideo) {
+    //     this.remoteVideo.srcObject = event.streams[0];
+    //   }
+    // };
 
-    this.peerConnection.onicecandidate = (event): void => {
-      if (event.candidate) {
-        trace(`Send the candidate ${event.candidate.candidate} to the remote peer`);
+    // this.peerConnection.onicecandidate = (event): void => {
+    //   if (event.candidate) {
+    //     trace(`Send the candidate ${event.candidate.candidate} to the remote peer`);
        
-        if (this.targetSocketId) {
-          this.channel.createNewIceCandidate({
-            candidate: event.candidate,
-            socketId: this.targetSocketId,
-          });
-        }
-      }
-    }
+    //     if (this.targetSocketId) {
+    //       this.channel.createNewIceCandidate({
+    //         candidate: event.candidate,
+    //         socketId: this.targetSocketId,
+    //       });
+    //     }
+    //   }
+    // }
 
-    this.peerConnection.oniceconnectionstatechange = (): void => {
-      if (this.peerConnection &&
-          (this.peerConnection.iceConnectionState === 'failed' ||
-          this.peerConnection.iceConnectionState === 'disconnected' ||
-          this.peerConnection.iceConnectionState === 'closed')) {
-        console.error('Failed to connect');
-      }
-    };
+    // this.peerConnection.oniceconnectionstatechange = (): void => {
+    //   if (this.peerConnection &&
+    //       (this.peerConnection.iceConnectionState === 'failed' ||
+    //       this.peerConnection.iceConnectionState === 'disconnected' ||
+    //       this.peerConnection.iceConnectionState === 'closed')) {
+    //     console.error('Failed to connect');
+    //   }
+    // };
+    this.peerConnection.setupConnection();
   }
 
   private updateUserList(socketIds: Array<string>) {
@@ -208,7 +175,7 @@ export default class AppController implements Baobi.Mediator {
   }
 
   private async invite(event: MouseEvent): Promise<void> {
-    trace('Send invite');
+    trace('Send invite', TARGET);
     this.isCaller = true;
     this.unselectUsersFromList();
 
@@ -229,7 +196,7 @@ export default class AppController implements Baobi.Mediator {
     }
 
     try {
-      trace('Get local user media');
+      trace('Get local user media', TARGET);
       this.webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
       if (this.localVideo) {
         this.localVideo.srcObject = this.webcamStream;
@@ -249,38 +216,37 @@ export default class AppController implements Baobi.Mediator {
   private async makeCall() {
     try {
       if (this.peerConnection) {
-        trace('Create offer');
-        const offer = await this.peerConnection.createOffer();
+        // trace('Create offer', TARGET);
+        // const offer = await this.peerConnection.createOffer();
     
-        trace('Set local description');
-        await this.peerConnection.setLocalDescription(offer);
+        // trace('Set local description', TARGET);
+        // await this.peerConnection.setLocalDescription(offer);
+        
+        const localDescription = await this.peerConnection.prepareToConnectAsCaller();
+
+        if (!localDescription) {
+          alert('Failed to generate RTC session description', TARGET);
+          return;
+        }
 
         this.channel.createOffer({
           socketId: this.targetSocketId,
           username: this.myUsername,
-          offer: this.peerConnection.localDescription,
+          offer: localDescription,
         });
       }
-
-  
     } catch(e) {
-      console.error('Failed to create offer: ' + e.message);
+      alert('Failed to create offer: ' + e.message, TARGET);
     };
   }
 
   private hangUp() {
-    trace('Hang up local peer connection');
-    if (this.peerConnection) {
-      if (this.sender) {
-        this.peerConnection.removeTrack(this.sender);
-      }
-      this.peerConnection.close();
-      this.peerConnection = null;
-    }
+    trace('Hang up local peer connection', TARGET);
+    this.peerConnection.prepareToDisconnet(this.sender);
   }
 
   private handleRemoteHangUp() {
-    trace('Handle remote hang up');
+    trace('Handle remote hang up', TARGET);
     this.isCalling = false;
     this.isCaller = true;
     this.isChannelReady = false;
@@ -290,29 +256,29 @@ export default class AppController implements Baobi.Mediator {
   private async makeAnswer({ username, socketId, offer }: Baobi.SocketMessage): Promise<void> {
     const desc = new RTCSessionDescription(offer);
     if (this.peerConnection) {
-
       // connect when peer connection is stable
-      if (this.peerConnection.signalingState !== 'stable') {
-        trace('Will Set remote description until the connection is stable');
+      // if (this.peerConnection.signalingState !== 'stable') {
+      //   trace('Will Set remote description until the connection is stable', TARGET);
 
-        await Promise.all([
-          this.peerConnection.setLocalDescription({type: 'rollback'}),
-          this.peerConnection.setRemoteDescription(desc),
-        ]);
-        return;
-      }
-      trace('Setting remote description')
-      await this.peerConnection.setRemoteDescription(desc);
+      //   await Promise.all([
+      //     this.peerConnection.setLocalDescription({type: 'rollback'}),
+      //     this.peerConnection.setRemoteDescription(desc),
+      //   ]);
+      //   return;
+      // }
+      // trace('Setting remote description', TARGET);
+      // await this.peerConnection.setRemoteDescription(desc);
+
+      // trace('Create and send answer to caller', TARGET);
+      // const answer = await this.peerConnection.createAnswer();
+      // await this.peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+      const answer = await this.peerConnection.prepareToConnectAsCallee(offer);
 
       const userContainerEl = document.getElementById(socketId);
       if (userContainerEl) {
         userContainerEl.setAttribute('class', 'active-user active-user--selected');
         userContainerEl.innerHTML = username || 'Anonymous';
       }
-
-      trace('Create and send answer to caller')
-      const answer = await this.peerConnection.createAnswer();
-      await this.peerConnection.setLocalDescription(new RTCSessionDescription(answer));
     
       this.channel.createAnswer({ socketId, answer, username: this.myUsername });
     }
@@ -323,23 +289,24 @@ export default class AppController implements Baobi.Mediator {
   }
 
   public async prepareToStart() {
-    trace(`Prepare to start: isCalling ${this.isCalling}, webcamStream ${this.webcamStream}, isCannelReady ${this.isChannelReady}`);
+    trace(`Prepare to start: isCalling ${this.isCalling}, webcamStream ${this.webcamStream}, isCannelReady ${this.isChannelReady}`, TARGET);
     if (!this.isCalling && this.webcamStream && this.isChannelReady) {
-      trace('Setup peer connection');
+      trace('Setup peer connection', TARGET);
       this.setupPeerConnection();
 
       try {
         if (this.webcamStream) {
           this.webcamStream.getTracks().forEach((track: MediaStreamTrack) => {
             if (this.peerConnection && this.webcamStream) {
-              trace(`Attach ${track.kind} stream`);
-              this.sender = this.peerConnection.addTrack(track, this.webcamStream);
+              trace(`Attach ${track.kind} stream`, TARGET);
+              // this.sender = this.peerConnection.addTrack(track, this.webcamStream);
+              this.sender = this.peerConnection.addLocalTrack(track, this.webcamStream);
             }
           });
         }
         this.isCalling = true;
       } catch(e) {
-        console.error('Failed to attach stream: ' + e.message)
+        alert('Failed to attach stream: ' + e.message, TARGET);
         return;
       }
   
@@ -361,7 +328,7 @@ export default class AppController implements Baobi.Mediator {
   }
 
   public async handleOffer({ username, socketId, offer }: Baobi.SocketMessage): Promise<void> {
-    trace(`Receive offer from caller ${username}`);
+    trace(`Receive offer from caller ${username}`, TARGET);
     this.updateTargetId(socketId);
 
     if (!this.isCaller) {
@@ -381,32 +348,34 @@ export default class AppController implements Baobi.Mediator {
 
   public async handleAnswer({ username, socketId, answer }: Baobi.SocketMessage): Promise<void> {
     if (this.peerConnection) {
-      trace(`Receive answer from callee ${username}`);
+      trace(`Receive answer from callee ${username}`, TARGET);
       const userContainerEl = document.getElementById(socketId);
       if (userContainerEl) {
         userContainerEl.setAttribute('class', 'active-user active-user--selected');
         userContainerEl.innerHTML = username || 'Anonymous';
       }
-      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+      // await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+      await this.peerConnection.addRemoteSession(answer);
     }
   }
 
   public async handleNewIceCandidate({ candidate }: Baobi.SocketMessage): Promise<void> {
     if (this.isCalling) {
-      const candidateInstance = new RTCIceCandidate(candidate);
+      // const candidateInstance = new RTCIceCandidate(candidate);
 
-      trace("Adding received ICE candidate: " + JSON.stringify(candidateInstance));
+      // trace("Adding received ICE candidate: " + JSON.stringify(candidateInstance), TARGET);
       try {
         if (this.peerConnection) {
-          await this.peerConnection.addIceCandidate(candidateInstance);
+          // await this.peerConnection.addIceCandidate(candidateInstance);
+          this.peerConnection.addIceCandidate(candidate)
         }
       } catch(e) {
-        console.error('Failed to add ice candidate');
+        alert('Failed to add ice candidate', TARGET);
       }
     }
   }
 
-  public handleRejection({ socketId }: Baobi.SocketMessage): void {
+  public handleRejection(): void {
     this.unselectUsersFromList()
   }
 
@@ -416,5 +385,21 @@ export default class AppController implements Baobi.Mediator {
 
   public updateTargetId(userId: string) {
     this.targetSocketId = userId;
+  }
+
+  // public methods for peer connection
+  public getRemoteStream(event: RTCTrackEvent): void{
+    if (this.remoteVideo) {
+      this.remoteVideo.srcObject = event.streams[0];
+    }
+  }
+
+  public sendCandidate(event: RTCPeerConnectionIceEvent): void {
+    if (this.targetSocketId) {
+      this.channel.createNewIceCandidate({
+        candidate: event.candidate,
+        socketId: this.targetSocketId,
+      });
+    }
   }
 }
