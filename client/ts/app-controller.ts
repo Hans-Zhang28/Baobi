@@ -136,7 +136,7 @@ export default class AppController implements Baobi.Mediator {
     //     console.error('Failed to connect');
     //   }
     // };
-    this.peerConnection.setupConnection();
+    this.peerConnection.setupPeerConnection();
   }
 
   private updateUserList(socketIds: Array<string>) {

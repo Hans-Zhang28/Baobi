@@ -35,13 +35,13 @@ export default class SignalingChannel {
       });
       
       this._channel.on('join', (data: any) => {
-        trace(`${data.user} made a request to join room`, TARGET);
-        this.prepareToStart(data.user);
+        trace(`${data.socketId} made a request to join room`, TARGET);
+        this.prepareToStart(data.socketId);
       });
       
       this._channel.on('joined', (data: any) => {
-        trace(`${data.user} joined`, TARGET);
-        this.prepareToStart(data.user);
+        trace(`${data.socketId} joined`, TARGET);
+        this.prepareToStart(data.socketId);
       });
   
       this._channel.on('stream-ready', () => {
