@@ -21,12 +21,12 @@ export default class Server implements Baobi.Server {
   }
 
   private configureApp(): void {
-    this._app.use(express.static(path.join(__dirname, '../webpack')));
+    this._app.use(express.static(path.join(__dirname, '../../webpack')));
   }
 
   private configureRoutes(): void {
     this._app.get('/', (req, res) => {
-      res.sendFile(path.join(__dirname, '../webpack/index.html'))
+      res.sendFile(path.join(__dirname, '../../webpack/index.html'))
     });
   }
 
