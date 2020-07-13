@@ -4,6 +4,7 @@ declare namespace Baobi {
   }
 
   interface Mediator {
+    // public methods for socket
     updateCallerStatus(status: boolean): void;
     updateChannelStatus(status: boolean): void;
     updateTargetId(userId: string): void;
@@ -11,8 +12,11 @@ declare namespace Baobi {
     prepareToStop(userId: string): void;
     handleOffer(SocketMessage): Promise<void>;
     handleAnswer(SocketMessage): Promise<void>;
-    handleRejection(SocketMessage): void;
+    handleRejection(): void;
     handleNewIceCandidate(SocketMessage): Promise<void>;
+    // public methods for peer conncetion
+    getRemoteStream(event: RTCTrackEvent): void;
+    sendCandidate(event: RTCPeerConnectionIceEvent): void;
   }
 
   interface SocketMessage {
