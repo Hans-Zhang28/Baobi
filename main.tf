@@ -4,6 +4,6 @@ module "video_insights" {
   feature_name        = "Video Insights"
   feature_key         = "video_insights"
   feature_description = "Enables Video Insights"
-  team                = "conversion"
+  team                = "playback"
   temporary           = false
 }
