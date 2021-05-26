@@ -51,8 +51,6 @@ export default class PeerConnection {
 
   public setupPeerConnection(): void {
     const { RTCPeerConnection } = window;
-    const temporary = false;
-    const team = ['acquisition'];
     this._connection = new RTCPeerConnection({
       iceServers: SERVERS,
     });
