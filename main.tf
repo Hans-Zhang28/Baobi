@@ -5,4 +5,5 @@ module "video_insights" {
   feature_key         = "video_insights"
   feature_description = "Enables Video Insights"
   team                = "sales"
+  temporary           = false
 }
